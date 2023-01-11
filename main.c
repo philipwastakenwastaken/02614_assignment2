@@ -38,7 +38,7 @@ void alloc_memory(double**** a, int N)
 void init_start_conditions(double*** u, double*** f, int N_prime, double start_T)
 {
     const double RADIATION = 200;
-    const double delta = 1 / (double) (N_prime - 1.0);
+    const double delta = 2 / (double) (N_prime - 1.0);
 
     const double X_LOWER_BOUND = -1;
     const double X_UPPER_BOUND = -3.0 / 8.0;
@@ -114,7 +114,7 @@ void validate(double*** u, int N_prime)
                 double z = -1.0 + delta * k;
                 // For testing
                 double u_ijk = sin(M_PI * x) * sin(M_PI * y) * sin(M_PI * z);
-                printf("%f %f\n", u[i][j][k], u_ijk);
+                //printf("%f %f\n", u[i][j][k], u_ijk);
                 total_error += fabs(u[i][j][k] - u_ijk);
 
             }
@@ -139,7 +139,6 @@ int main(int argc, char** argv)
     double*** u = NULL;
     double*** u_old = NULL;
     double*** f = NULL;
-
 
     // 1. Input from command-line
     N         = atoi(argv[1]);	// grid size
