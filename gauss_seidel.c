@@ -27,6 +27,7 @@ void gauss_seidel(double*** u, double*** f, int N, int max_iter, double toleranc
 {
     double delta = 1 / (double) N;
     double delta_squared = delta * delta;
+    double N_cubed = N * N * N;
 
     double d = INFINITY;
     int n = 0;
@@ -39,7 +40,7 @@ void gauss_seidel(double*** u, double*** f, int N, int max_iter, double toleranc
                 for (int k = 1; k < N - 1; k++)
                     u[i][j][k] = gauss_seidel_update_point(u, f, &norm_scalar, i, j, k, delta_squared);
 
-        d = sqrt(norm_scalar) / (N * N * N);
+        d = sqrt(norm_scalar) / N_cubed;
 
 #ifdef VERBOSE
         if (n % 100 == 0)
