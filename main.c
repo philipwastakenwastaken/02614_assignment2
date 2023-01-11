@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <omp.h>
 
 #include "alloc3d.h"
 #include "print.h"
@@ -57,16 +58,17 @@ void init_start_conditions(double*** u, double*** f, int N_prime, double start_T
                 double x = -1.0 + delta * i;
                 double y = -1.0 + delta * j;
                 double z = -1.0 + delta * k;
-
+#ifndef VALIDATE
                 if (x >= X_LOWER_BOUND && x <= X_UPPER_BOUND &&
                     y >= Y_LOWER_BOUND && y <= Y_UPPER_BOUND &&
                     z >= Z_LOWER_BOUND && z <= Z_UPPER_BOUND)
                     f[i][j][k] = RADIATION;
                 else
                     f[i][j][k] = 0;
-
+#else
                 // For testing
-                //f[i][j][k] = 3 * M_PI * M_PI * sin(M_PI * x) * sin(M_PI * y) * sin(M_PI * z);
+                f[i][j][k] = 3 * M_PI * M_PI * sin(M_PI * x) * sin(M_PI * y) * sin(M_PI * z);
+#endif
 
             }
         }
@@ -75,6 +77,7 @@ void init_start_conditions(double*** u, double*** f, int N_prime, double start_T
     // Initial guess
     memset(&u[0][0][0], start_T, sizeof(double));
 
+#ifndef VALIDATE
     int edge_index = N_prime - 1;
     // Initialize boundary points
     for (int x = 0; x < N_prime; x++)
@@ -90,8 +93,8 @@ void init_start_conditions(double*** u, double*** f, int N_prime, double start_T
 
             u[x][y][0] = 20;
             u[x][y][edge_index] = 20;
-
         }
+#endif
 
 
 }
@@ -100,22 +103,29 @@ void validate(double*** u, int N_prime)
 {
     const double delta = 1 / (double) (N_prime - 1.0);
 
+    double total_error = 0;
     for (int i = 0; i < N_prime; i++)
         for (int j = 0; j < N_prime; j++)
         {
             for (int k = 0; k < N_prime; k++)
             {
-                /*
+                double x = -1.0 + delta * i;
+                double y = -1.0 + delta * j;
+                double z = -1.0 + delta * k;
                 // For testing
                 double u_ijk = sin(M_PI * x) * sin(M_PI * y) * sin(M_PI * z);
                 printf("%f %f\n", u[i][j][k], u_ijk);
-                */
+                total_error += fabs(u[i][j][k] - u_ijk);
 
             }
         }
+
+    printf("error = %f\n", total_error);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
+    double start = omp_get_wtime();
 
     int 	N = N_DEFAULT;
     int 	N_prime = N_DEFAULT + 2;
@@ -143,19 +153,28 @@ int main(int argc, char** argv) {
 
     // 2. Allocate memory
     alloc_memory(&u, N_prime);
-    alloc_memory(&u_old, N_prime);
     alloc_memory(&f, N_prime);
+
+#ifdef _JACOBI
+    alloc_memory(&u_old, N_prime);
+#endif
 
 
     // 3. Init. f and boundary conditions
     init_start_conditions(u, f, N_prime, start_T);
 
     // 4. Call iterator
-    #ifdef _JACOBI
+#ifdef _JACOBI
     jacobi(u, u_old, f, N_prime, iter_max, tolerance);
-    #endif
+#elif defined(_GAUSS_SEIDEL)
+    gauss_seidel(u, f, N_prime, iter_max, tolerance);
+#endif
 
-    //validate(u, N_prime);
+
+
+#ifdef VALIDATE
+    validate(u, N_prime);
+#endif
 
     // 5. Print results
     switch(output_type) {
@@ -181,8 +200,14 @@ int main(int argc, char** argv) {
 
     // 6. Deallocate memory
     dealloc_memory(u, N_prime);
-    dealloc_memory(u_old, N_prime);
     dealloc_memory(f, N_prime);
+
+#ifdef _JACOBI
+    dealloc_memory(u_old, N_prime);
+#endif
+
+    double elapsed = omp_get_wtime() - start;
+    printf("time = %f\n", elapsed);
 
     return(0);
 }
