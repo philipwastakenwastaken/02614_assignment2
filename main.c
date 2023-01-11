@@ -75,24 +75,24 @@ void init_start_conditions(double*** u, double*** f, int N_prime, double start_T
 
 
     // Initial guess
-    memset(&u[0][0][0], start_T, sizeof(double));
+    memset(&u[0][0][0], start_T, N_prime * N_prime * N_prime * sizeof(double));
 
 #ifndef VALIDATE
     int edge_index = N_prime - 1;
     // Initialize boundary points
-    for (int x = 0; x < N_prime; x++)
-        for (int y = 0; y < N_prime; y++)
+    for (int i = 0; i < N_prime; i++)
+        for (int j = 0; j < N_prime; j++)
         {
             // No need to convert to domain space here,
             // since we only need predefined values at edges.
-            u[x][0][y] = 0;
-            u[x][edge_index][y] = 20;
+            u[i][0][j] = 0;
+            u[i][edge_index][j] = 20;
 
-            u[0][x][y] = 20;
-            u[edge_index][x][y] = 20;
+            u[0][i][j] = 20;
+            u[edge_index][i][j] = 20;
 
-            u[x][y][0] = 20;
-            u[x][y][edge_index] = 20;
+            u[i][j][0] = 20;
+            u[i][j][edge_index] = 20;
         }
 #endif
 
@@ -191,7 +191,7 @@ int main(int argc, char** argv)
 	    output_ext = ".vtk";
 	    sprintf(output_filename, "%s_%d%s", output_prefix, N, output_ext);
 	    fprintf(stderr, "Write VTK file to %s: ", output_filename);
-	    print_vtk(output_filename, N, u);
+	    print_vtk(output_filename, N_prime, u);
 	    break;
 	default:
 	    fprintf(stderr, "Non-supported output type!\n");
