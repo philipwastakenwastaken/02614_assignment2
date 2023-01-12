@@ -59,7 +59,7 @@ void jacobi(double*** u, double*** u_old, double*** f, int N, int max_iter, doub
                     for (int k = 1; k < N - 1; k++)
                         u[i][j][k] = jacobi_update_point(u_old, f, &norm_scalar_part, i, j, k, delta_squared);
 
-            #pragma omp critical
+            #pragma omp atomic
             norm_scalar += norm_scalar_part;
 
         }
