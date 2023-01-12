@@ -45,7 +45,9 @@ void jacobi(double*** u, double*** u_old, double*** f, int N, int max_iter, doub
             #pragma omp single
             {
                 norm_scalar = 0;
-                memcpy(&u_old[0][0][0], &u[0][0][0], arr_size);
+                double*** temp = u;
+                u = u_old;
+                u_old = temp;
             }
 
             norm_scalar_part = 0;
@@ -95,61 +97,40 @@ void jacobi_for(double*** u, double*** u_old, double*** f, int N, int max_iter, 
     {
         while (d > tolerance && n < max_iter)
         {
-        for (int i = 1; i < N - 1; i++)
-            for (int j = 1; j < N - 1; j++)
-                for (int k = 1; k < N - 1; k++)
-                    u[i][j][k] = jacobi_update_point(u_old, f, &norm_scalar, i, j, k, delta_squared);
-        }
-        d = sqrt(norm_scalar);
+            // u_old = old
+            #pragma omp single
+            {
+                norm_scalar = 0;
+                double*** temp = u;
+                u = u_old;
+                u_old = temp;
+            }
 
-#ifdef VERBOSE
-        if (n % 100 == 0)
-            printf("d = %f iter = %d\n", d, n);
-#endif
+            norm_scalar_part = 0;
+            
+            #pragma omp for schedule(dynamic)
+            for (int i = 1; i < N - 1; i++)
+                for (int j = 1; j < N - 1; j++)
+                    for (int k = 1; k < N - 1; k++)
+                        u[i][j][k] = jacobi_update_point(u_old, f, &norm_scalar_part, i, j, k, delta_squared);
 
-        n++;
+            #pragma omp critical
+            norm_scalar += norm_scalar_part;
 
-
-#ifdef VERBOSE
-    printf("Iterations: %d\n", n);
-#endif
-    }
-}
-
-
-
-void jacobi_for(double*** u, double*** u_old, double*** f, int N, int max_iter, double tolerance)
-{
-    double delta = 1 / (double) N;
-    double delta_squared = delta * delta;
-    double N_cubed = N * N * N;
-    
-    double arr_size = N_cubed * sizeof(double);
-
-    double d = INFINITY;
-    int n = 0;
-    double norm_scalar;
-    double norm_scalar_part;
-
-    #pragma omp parallel default(none) shared(n, d, u, u_old) private(norm_scalar_part) firstprivate(N, max_iter, arr_size, tolerance, delta_squared, N_cubed, norm_scalar, f)
-    {
-        while (d > tolerance && n < max_iter)
-        {
-        for (int i = 1; i < N - 1; i++)
-            for (int j = 1; j < N - 1; j++)
-                for (int k = 1; k < N - 1; k++)
-                    u[i][j][k] = jacobi_update_point(u_old, f, &norm_scalar, i, j, k, delta_squared);
-
-        d = sqrt(norm_scalar);
+            #pragma omp single
+            {
+            d = sqrt(norm_scalar) / N_cubed;
+            n++;
+            }
 
             #ifdef VERBOSE
-                #pragma omp master
-                {
-                if (n % 100 == 0)
-                    printf("d = %f iter = %d\n", d, n);
-                }
+            #pragma omp master
+            {
+            if (n % 100 == 0)
+                printf("d = %f iter = %d\n", d, n);
+            }            
             #endif
-            
         }
     } // END OF PARALLEL
+
 }
