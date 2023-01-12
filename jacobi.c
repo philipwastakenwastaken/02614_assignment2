@@ -45,18 +45,19 @@ void jacobi(double*** u, double*** u_old, double*** f, int N, int max_iter, doub
             #pragma omp single
             {
                 norm_scalar = 0;
-                norm_scalar_part = 0;
                 memcpy(&u_old[0][0][0], &u[0][0][0], arr_size);
             }
+
+            norm_scalar_part = 0;
             
             #pragma omp for schedule(dynamic)
             for (int i = 1; i < N - 1; i++)
                 for (int j = 1; j < N - 1; j++)
                     for (int k = 1; k < N - 1; k++)
-                        u[i][j][k] = jacobi_update_point(u_old, f, &norm_scalar, i, j, k, delta_squared);
+                        u[i][j][k] = jacobi_update_point(u_old, f, &norm_scalar_part, i, j, k, delta_squared);
 
             #pragma omp critical
-            norm_scalar  += norm_scalar_part;
+            norm_scalar += norm_scalar_part;
 
             #pragma omp single
             {
@@ -73,10 +74,16 @@ void jacobi(double*** u, double*** u_old, double*** f, int N, int max_iter, doub
             #endif
         }
     } // END OF PARALLEL
+
+    for (int i = 1; i < N - 1; i++)
+        for (int j = 1; j < N - 1; j++)
+            for (int k = 1; k < N - 1; k++)
+                printf("u[%d][%d][%d] = %f", i, j, k, u[i][j][k]);
+
 }
 
 
-void jacobi_serial(double*** u, double*** u_old, double*** f, int N, int max_iter, double tolerance)
+void jacobi_for(double*** u, double*** u_old, double*** f, int N, int max_iter, double tolerance)
 {
     double delta = 1 / (double) N;
     double delta_squared = delta * delta;
