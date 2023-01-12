@@ -45,11 +45,13 @@ void jacobi(double*** u, double*** u_old, double*** f, int N, int max_iter, doub
                 firstprivate(delta_squared, N_cubed, f, N)
         {
 
-            #pragma parallel for
-            for (int i = 1; i < N - 1; i++)
-                for (int j = 1; j < N - 1; j++)
-                    for (int k = 1; k < N - 1; k++)
-                        u_old[i][j][k] = u[i][j][k];
+            // Swap u and u_old
+            #pragma omp single
+            {
+                double*** temp = u;
+                u = u_old;
+                u_old = temp;
+            }
 
             norm_scalar = 0;
             norm_scalar_part = 0;
