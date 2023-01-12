@@ -120,7 +120,7 @@ void validate(double*** u, int N_prime)
             }
         }
 
-    printf("error = %f\n", total_error);
+    printf("error = %f\n", total_error / (N_prime * N_prime * N_prime));
 }
 
 int main(int argc, char** argv)

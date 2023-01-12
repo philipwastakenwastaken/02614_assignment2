@@ -36,6 +36,7 @@ void jacobi(double*** u, double*** u_old, double*** f, int N, int max_iter, doub
     double norm_scalar_part;
 
 
+
     while (d > tolerance && n < max_iter)
     {
 
@@ -44,16 +45,16 @@ void jacobi(double*** u, double*** u_old, double*** f, int N, int max_iter, doub
                 private(norm_scalar_part) \
                 firstprivate(delta_squared, N_cubed, f, N)
         {
-
             // Swap u and u_old
             #pragma omp single
             {
                 double*** temp = u;
                 u = u_old;
                 u_old = temp;
+
+                norm_scalar = 0;
             }
 
-            norm_scalar = 0;
             norm_scalar_part = 0;
 
             #pragma omp for
