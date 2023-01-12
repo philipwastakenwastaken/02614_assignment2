@@ -53,7 +53,8 @@ void gauss_seidel(double*** u, double*** f, int N, int max_iter, double toleranc
             norm_scalar_part = 0;
 
 
-            #pragma omp for ordered(2)
+            #pragma omp for ordered(2) \
+                    schedule(dynamic)
             for (int i = 1; i < N - 1; i++)
                 for (int j = 1; j < N - 1; j++)
                 {
