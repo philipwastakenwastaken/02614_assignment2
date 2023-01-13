@@ -47,8 +47,16 @@ void init_start_conditions(double*** u, double*** f, int N_prime, double start_T
     const double Z_LOWER_BOUND = -2.0 / 3.0;
     const double Z_UPPER_BOUND = 0;
 
+    int edge_index = N_prime - 1;
+
+    #pragma omp parallel \
+            firstprivate(N_prime, f, X_LOWER_BOUND, X_UPPER_BOUND, Y_LOWER_BOUND, Y_UPPER_BOUND, Z_LOWER_BOUND, Z_UPPER_BOUND, RADIATION, delta, u, edge_index)
+    {
+
 
     // Initialize f.
+    #pragma omp for \
+            schedule(static)
     for (int i = 0; i < N_prime; i++)
         for (int j = 0; j < N_prime; j++)
         {
@@ -75,11 +83,22 @@ void init_start_conditions(double*** u, double*** f, int N_prime, double start_T
 
 
     // Initial guess
-    memset(&u[0][0][0], start_T, N_prime * N_prime * N_prime * sizeof(double));
+    //memset(&u[0][0][0], start_T, N_prime * N_prime * N_prime * sizeof(double));
+
+
+    #pragma omp for \
+            schedule(static)
+    for (int i = 1; i < N_prime - 1; i++)
+        for (int j = 1; j < N_prime - 1; j++)
+            for (int k = 1; k < N_prime - 1; k++)
+                u[i][j][k] = 0;
+
+
 
 #ifndef VALIDATE
-    int edge_index = N_prime - 1;
     // Initialize boundary points
+    #pragma omp for \
+            schedule(static)
     for (int i = 0; i < N_prime; i++)
         for (int j = 0; j < N_prime; j++)
         {
@@ -95,6 +114,8 @@ void init_start_conditions(double*** u, double*** f, int N_prime, double start_T
             u[i][j][edge_index] = 20;
         }
 #endif
+
+    }
 
 
 }
